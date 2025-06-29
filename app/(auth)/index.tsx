@@ -26,7 +26,7 @@ export default function WelcomeScreen() {
     >
       <Animated.View entering={FadeInUp.delay(300).duration(800)} style={styles.logoContainer}>
         <School color={Colors.white} size={80} />
-        <Text style={styles.appName}>SchoolConnect</Text>
+        <Text style={styles.appName}>Vidya Sagar School</Text>
         <Text style={styles.tagline}>Connecting students, teachers, and parents</Text>
       </Animated.View>
 
