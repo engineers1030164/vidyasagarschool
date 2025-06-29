@@ -119,9 +119,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sign out function
   const signOut = async () => {
     console.log('Starting sign out process...');
-    setIsLoading(true);
     try {
-      // Clear user data from AsyncStorage
+      // Clear user data from AsyncStorage first
       await AsyncStorage.removeItem('user');
       console.log('User data removed from storage');
       
@@ -136,9 +135,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
-      console.log('Sign out process completed');
     }
   };
 

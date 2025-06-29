@@ -32,12 +32,16 @@ export default function ProfileScreen() {
               setIsLoggingOut(true);
               console.log('Logout button pressed, calling signOut...');
               
-              // Sign out and clear all data
               await signOut();
-              console.log('SignOut completed');
+              console.log('SignOut completed, navigating to auth...');
               
-              // Navigate to auth screen - this will be handled by the auth context
-              // The app layout will automatically redirect when isSignedIn becomes false
+              // Force navigation to auth screen
+              router.replace('/(auth)/');
+              
+              // Additional fallback navigation
+              setTimeout(() => {
+                router.replace('/(auth)/');
+              }, 100);
               
             } catch (error) {
               console.error('Logout error:', error);
@@ -61,7 +65,7 @@ export default function ProfileScreen() {
 
   const handleScheduleTimetable = () => {
     // Navigate to calendar tab
-    router.push('/(app)/(tabs)/calendar');
+    router.push('/(app)/calendar');
   };
 
   const handleFeedback = () => {
@@ -251,7 +255,7 @@ export default function ProfileScreen() {
           {user?.role === 'student' && (
             <TouchableOpacity 
               style={styles.menuItem}
-              onPress={() => router.push('/(app)/(tabs)/reports')}
+              onPress={() => router.push('/(app)/reports')}
             >
               <View style={[styles.menuItemIcon, { backgroundColor: Colors.warning[600] }]}>
                 <FileText size={20} color={Colors.white} />
@@ -323,12 +327,12 @@ export default function ProfileScreen() {
 
           <TouchableOpacity 
             style={styles.menuItem}
-            onPress={() => Alert.alert('About', 'Vidya Sagar School v1.0.0\n\nA comprehensive school management application designed to connect students, teachers, and parents.\n\nDeveloped with ❤️ for better education.')}
+            onPress={() => Alert.alert('About', 'SchoolConnect v1.0.0\n\nA comprehensive school management application designed to connect students, teachers, and parents.\n\nDeveloped with ❤️ for better education.')}
           >
             <View style={[styles.menuItemIcon, { backgroundColor: Colors.secondary[400] }]}>
               <Heart size={20} color={Colors.white} />
             </View>
-            <Text style={styles.menuItemText}>About Vidya Sagar School</Text>
+            <Text style={styles.menuItemText}>About SchoolConnect</Text>
             <ChevronRight size={20} color={Colors.neutral[400]} />
           </TouchableOpacity>
         </Animated.View>
@@ -347,7 +351,7 @@ export default function ProfileScreen() {
           </Text>
         </TouchableOpacity>
         
-        <Text style={styles.versionText}>Vidya Sagar School v1.0.0</Text>
+        <Text style={styles.versionText}>SchoolConnect v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
