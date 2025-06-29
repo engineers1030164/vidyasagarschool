@@ -56,19 +56,11 @@ export default function ProfileScreen() {
   };
 
   const handlePersonalInfo = () => {
-    Alert.alert(
-      'Personal Information',
-      'This feature will allow you to edit your personal details like name, contact information, and profile picture.',
-      [{ text: 'OK' }]
-    );
+    router.push('/(app)/personal-info');
   };
 
   const handleAcademicRecords = () => {
-    Alert.alert(
-      'Academic Records',
-      'View your complete academic history including grades, transcripts, and certificates.',
-      [{ text: 'OK' }]
-    );
+    router.push('/(app)/academic-records');
   };
 
   const handleScheduleTimetable = () => {
@@ -77,35 +69,23 @@ export default function ProfileScreen() {
   };
 
   const handleFeedback = () => {
-    Alert.alert(
-      'Feedback & Suggestions',
-      'We value your feedback! This feature will allow you to submit suggestions and report issues.',
-      [{ text: 'OK' }]
-    );
+    router.push('/(app)/feedback');
   };
 
   const handlePrivacySecurity = () => {
-    Alert.alert(
-      'Privacy & Security',
-      'Manage your privacy settings, change password, and control data sharing preferences.',
-      [{ text: 'OK' }]
-    );
+    router.push('/(app)/privacy-security');
   };
 
   const handleHelpSupport = () => {
-    Alert.alert(
-      'Help & Support',
-      'Get help with using the app, contact support, or browse our FAQ section.',
-      [{ text: 'OK' }]
-    );
+    router.push('/(app)/help-support');
   };
 
   const handleEditProfile = () => {
-    Alert.alert(
-      'Edit Profile',
-      'This feature will allow you to update your profile information and upload a new profile picture.',
-      [{ text: 'OK' }]
-    );
+    router.push('/(app)/edit-profile');
+  };
+
+  const handleNotificationSettings = () => {
+    router.push('/(app)/notification-settings');
   };
 
   // Show loading state if auth is loading
@@ -143,7 +123,7 @@ export default function ProfileScreen() {
           <Text style={styles.headerTitle}>Profile</Text>
           <TouchableOpacity 
             style={styles.settingsButton}
-            onPress={() => Alert.alert('Settings', 'App settings and preferences will be available here.')}
+            onPress={() => router.push('/(app)/app-settings')}
           >
             <Settings size={24} color={Colors.neutral[700]} />
           </TouchableOpacity>
@@ -190,21 +170,30 @@ export default function ProfileScreen() {
             entering={FadeInUp.duration(500).delay(200)}
             style={styles.statsCard}
           >
-            <TouchableOpacity style={styles.statItem}>
+            <TouchableOpacity 
+              style={styles.statItem}
+              onPress={() => router.push('/(app)/attendance-details')}
+            >
               <Text style={styles.statValue}>92%</Text>
               <Text style={styles.statLabel}>Attendance</Text>
             </TouchableOpacity>
             
             <View style={styles.statDivider} />
             
-            <TouchableOpacity style={styles.statItem}>
+            <TouchableOpacity 
+              style={styles.statItem}
+              onPress={() => router.push('/(app)/grade-details')}
+            >
               <Text style={styles.statValue}>A-</Text>
               <Text style={styles.statLabel}>Avg. Grade</Text>
             </TouchableOpacity>
             
             <View style={styles.statDivider} />
             
-            <TouchableOpacity style={styles.statItem}>
+            <TouchableOpacity 
+              style={styles.statItem}
+              onPress={() => router.push('/(app)/ranking-details')}
+            >
               <Text style={styles.statValue}>5</Text>
               <Text style={styles.statLabel}>Rank</Text>
             </TouchableOpacity>
@@ -283,18 +272,16 @@ export default function ProfileScreen() {
         >
           <Text style={styles.sectionTitle}>Preferences</Text>
           
-          <View style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={handleNotificationSettings}
+          >
             <View style={[styles.menuItemIcon, { backgroundColor: Colors.warning[600] }]}>
               <Bell size={20} color={Colors.white} />
             </View>
-            <Text style={styles.menuItemText}>Notifications</Text>
-            <Switch
-              value={notifications}
-              onValueChange={setNotifications}
-              trackColor={{ false: Colors.neutral[300], true: Colors.primary[300] }}
-              thumbColor={notifications ? Colors.primary[600] : Colors.neutral[100]}
-            />
-          </View>
+            <Text style={styles.menuItemText}>Notification Settings</Text>
+            <ChevronRight size={20} color={Colors.neutral[400]} />
+          </TouchableOpacity>
           
           <View style={styles.menuItem}>
             <View style={[styles.menuItemIcon, { backgroundColor: Colors.neutral[700] }]}>
