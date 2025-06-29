@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { SPACING, FONT_SIZE, BORDER_RADIUS, globalStyles } from '@/constants/Theme';
-import { ArrowLeft, MessageSquare, Star, Send, ThumbsUp, AlertCircle, Lightbulb } from 'lucide-react-native';
+import { ArrowLeft, MessageSquare, Star, Send, ThumbsUp, CircleAlert as AlertCircle, Lightbulb } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 export default function FeedbackScreen() {
