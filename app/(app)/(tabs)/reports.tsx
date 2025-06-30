@@ -5,7 +5,7 @@ import { LineChart, BarChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import Colors from '@/constants/Colors';
 import { SPACING, FONT_SIZE, BORDER_RADIUS, globalStyles } from '@/constants/Theme';
-import { ChevronDown, BookOpen, CircleCheck as CheckCircle2, Activity, FileText, HeartPulse, Brain, Calendar, Plus, Eye, Clock, AlertCircle } from 'lucide-react-native';
+import { ChevronDown, BookOpen, CircleCheck as CheckCircle2, Activity, FileText, HeartPulse, Brain, Calendar, Plus, Eye, Clock, CircleAlert as AlertCircle } from 'lucide-react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 type ReportType = 'academic' | 'attendance' | 'health';
