@@ -30,6 +30,14 @@ export default function FeedbackScreen() {
     { id: 'issue', name: 'Report Issue', icon: AlertCircle, color: Colors.error[600] },
   ];
 
+  const handleBackPress = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  };
+
   const handleSubmit = async () => {
     if (!feedback.trim()) {
       Alert.alert('Error', 'Please enter your feedback before submitting.');
@@ -51,7 +59,7 @@ export default function FeedbackScreen() {
               setFeedback('');
               setRating(0);
               setAttachedFiles([]);
-              router.back();
+              handleBackPress();
             }
           }
         ]
@@ -178,7 +186,7 @@ export default function FeedbackScreen() {
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={handleBackPress}
           >
             <ArrowLeft size={24} color={Colors.neutral[800]} />
           </TouchableOpacity>
