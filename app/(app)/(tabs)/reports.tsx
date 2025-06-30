@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import Colors from '@/constants/Colors';
 import { SPACING, FONT_SIZE, BORDER_RADIUS, globalStyles } from '@/constants/Theme';
-import { ChevronDown, BookOpen, CircleCheck as CheckCircle2, Activity, FileText, HeartPulse, Brain } from 'lucide-react-native';
+import { ChevronDown, BookOpen, CircleCheck as CheckCircle2, Activity, FileText, HeartPulse, Brain, Calendar, Plus, Eye, Clock, AlertCircle } from 'lucide-react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 type ReportType = 'academic' | 'attendance' | 'health';
 
+interface LeaveApplication {
+  id: string;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  message: string;
+  status: 'pending' | 'approved' | 'rejected';
+  appliedDate: string;
+}
+
 export default function ReportsScreen() {
   const [selectedReport, setSelectedReport] = useState<ReportType>('academic');
+  const [showLeaveForm, setShowLeaveForm] = useState(false);
+  const [showAppliedLeaves, setShowAppliedLeaves] = useState(false);
   
   const screenWidth = Dimensions.get('window').width - (SPACING.md * 2);
   
@@ -20,7 +32,7 @@ export default function ReportsScreen() {
       case 'academic':
         return <AcademicReport screenWidth={screenWidth} />;
       case 'attendance':
-        return <AttendanceReport screenWidth={screenWidth} />;
+        return <AttendanceReport screenWidth={screenWidth} showLeaveForm={showLeaveForm} setShowLeaveForm={setShowLeaveForm} showAppliedLeaves={showAppliedLeaves} setShowAppliedLeaves={setShowAppliedLeaves} />;
       case 'health':
         return <HealthReport screenWidth={screenWidth} />;
       default:
@@ -113,6 +125,417 @@ export default function ReportsScreen() {
         </ScrollView>
       </View>
     </SafeAreaView>
+  );
+}
+
+function LeaveApplicationForm({ onClose, onSubmit }: { onClose: () => void; onSubmit: (leave: Omit<LeaveApplication, 'id' | 'status' | 'appliedDate'>) => void }) {
+  const [leaveType, setLeaveType] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [message, setMessage] = useState('');
+  const [showLeaveTypeDropdown, setShowLeaveTypeDropdown] = useState(false);
+
+  const leaveTypes = [
+    'Sick Leave',
+    'Personal Leave',
+    'Family Emergency',
+    'Medical Appointment',
+    'Religious Holiday',
+    'Other'
+  ];
+
+  const handleSubmit = () => {
+    if (!leaveType || !startDate || !endDate || !message.trim()) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      Alert.alert('Error', 'End date must be after start date');
+      return;
+    }
+
+    onSubmit({
+      leaveType,
+      startDate,
+      endDate,
+      message: message.trim()
+    });
+
+    // Reset form
+    setLeaveType('');
+    setStartDate('');
+    setEndDate('');
+    setMessage('');
+    onClose();
+  };
+
+  return (
+    <View style={styles.leaveFormContainer}>
+      <View style={styles.leaveFormHeader}>
+        <Text style={styles.leaveFormTitle}>Apply for Leave</Text>
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <Text style={styles.closeButtonText}>×</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.formField}>
+        <Text style={styles.fieldLabel}>Leave Type *</Text>
+        <TouchableOpacity
+          style={styles.dropdownButton}
+          onPress={() => setShowLeaveTypeDropdown(!showLeaveTypeDropdown)}
+        >
+          <Text style={[styles.dropdownText, !leaveType && styles.placeholderText]}>
+            {leaveType || 'Select leave type'}
+          </Text>
+          <ChevronDown size={20} color={Colors.neutral[600]} />
+        </TouchableOpacity>
+        
+        {showLeaveTypeDropdown && (
+          <View style={styles.dropdownMenu}>
+            {leaveTypes.map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setLeaveType(type);
+                  setShowLeaveTypeDropdown(false);
+                }}
+              >
+                <Text style={styles.dropdownItemText}>{type}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.formField}>
+        <Text style={styles.fieldLabel}>Start Date *</Text>
+        <TextInput
+          style={styles.dateInput}
+          placeholder="YYYY-MM-DD"
+          value={startDate}
+          onChangeText={setStartDate}
+          placeholderTextColor={Colors.neutral[400]}
+        />
+      </View>
+
+      <View style={styles.formField}>
+        <Text style={styles.fieldLabel}>End Date *</Text>
+        <TextInput
+          style={styles.dateInput}
+          placeholder="YYYY-MM-DD"
+          value={endDate}
+          onChangeText={setEndDate}
+          placeholderTextColor={Colors.neutral[400]}
+        />
+      </View>
+
+      <View style={styles.formField}>
+        <Text style={styles.fieldLabel}>Message *</Text>
+        <TextInput
+          style={styles.messageInput}
+          placeholder="Please provide reason for leave..."
+          value={message}
+          onChangeText={setMessage}
+          multiline
+          numberOfLines={4}
+          maxLength={500}
+          textAlignVertical="top"
+          placeholderTextColor={Colors.neutral[400]}
+        />
+        <Text style={styles.characterCount}>{message.length}/500</Text>
+      </View>
+
+      <TouchableOpacity
+        style={[
+          styles.applyButton,
+          (!leaveType || !startDate || !endDate || !message.trim()) && styles.applyButtonDisabled
+        ]}
+        onPress={handleSubmit}
+        disabled={!leaveType || !startDate || !endDate || !message.trim()}
+      >
+        <Text style={styles.applyButtonText}>Apply Leave</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function AppliedLeavesList({ leaves, onClose }: { leaves: LeaveApplication[]; onClose: () => void }) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return Colors.success[500];
+      case 'rejected':
+        return Colors.error[500];
+      case 'pending':
+        return Colors.warning[500];
+      default:
+        return Colors.neutral[500];
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <CheckCircle2 size={16} color={Colors.success[500]} />;
+      case 'rejected':
+        return <AlertCircle size={16} color={Colors.error[500]} />;
+      case 'pending':
+        return <Clock size={16} color={Colors.warning[500]} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <View style={styles.appliedLeavesContainer}>
+      <View style={styles.appliedLeavesHeader}>
+        <Text style={styles.appliedLeavesTitle}>Applied Leaves</Text>
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <Text style={styles.closeButtonText}>×</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.leavesList}>
+        {leaves.length === 0 ? (
+          <View style={styles.noLeavesContainer}>
+            <Text style={styles.noLeavesText}>No leave applications found</Text>
+          </View>
+        ) : (
+          leaves.map((leave) => (
+            <View key={leave.id} style={styles.leaveItem}>
+              <View style={styles.leaveItemHeader}>
+                <Text style={styles.leaveItemType}>{leave.leaveType}</Text>
+                <View style={styles.leaveItemStatus}>
+                  {getStatusIcon(leave.status)}
+                  <Text style={[styles.leaveItemStatusText, { color: getStatusColor(leave.status) }]}>
+                    {leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={styles.leaveItemDates}>
+                <Calendar size={14} color={Colors.neutral[500]} />
+                <Text style={styles.leaveItemDatesText}>
+                  {leave.startDate} to {leave.endDate}
+                </Text>
+              </View>
+              
+              <Text style={styles.leaveItemMessage} numberOfLines={2}>
+                {leave.message}
+              </Text>
+              
+              <Text style={styles.leaveItemAppliedDate}>
+                Applied on: {leave.appliedDate}
+              </Text>
+            </View>
+          ))
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+function AttendanceReport({ screenWidth, showLeaveForm, setShowLeaveForm, showAppliedLeaves, setShowAppliedLeaves }: { 
+  screenWidth: number; 
+  showLeaveForm: boolean; 
+  setShowLeaveForm: (show: boolean) => void;
+  showAppliedLeaves: boolean;
+  setShowAppliedLeaves: (show: boolean) => void;
+}) {
+  const [selectedPeriod, setSelectedPeriod] = useState('Current Term');
+  const [appliedLeaves, setAppliedLeaves] = useState<LeaveApplication[]>([
+    {
+      id: '1',
+      leaveType: 'Sick Leave',
+      startDate: '2025-01-20',
+      endDate: '2025-01-22',
+      message: 'I am suffering from fever and need rest for recovery.',
+      status: 'approved',
+      appliedDate: '2025-01-18'
+    },
+    {
+      id: '2',
+      leaveType: 'Family Emergency',
+      startDate: '2025-01-25',
+      endDate: '2025-01-25',
+      message: 'Family emergency requires immediate attention.',
+      status: 'pending',
+      appliedDate: '2025-01-24'
+    }
+  ]);
+  
+  // Attendance data for the chart
+  const attendanceData = {
+    labels: ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
+    datasets: [
+      {
+        data: [100, 95, 98, 92, 97, 100],
+        color: () => Colors.primary[600],
+        strokeWidth: 2,
+      },
+    ],
+  };
+  
+  // Detailed attendance records
+  const attendanceRecords = [
+    { id: '1', date: 'Jan 15, 2025', status: 'present', note: '' },
+    { id: '2', date: 'Jan 14, 2025', status: 'present', note: '' },
+    { id: '3', date: 'Jan 13, 2025', status: 'present', note: '' },
+    { id: '4', date: 'Jan 12, 2025', status: 'absent', note: 'Medical appointment' },
+    { id: '5', date: 'Jan 11, 2025', status: 'present', note: '' },
+    { id: '6', date: 'Jan 10, 2025', status: 'late', note: 'Bus delay - 15 min' },
+  ];
+  
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'present':
+        return Colors.success[500];
+      case 'absent':
+        return Colors.error[500];
+      case 'late':
+        return Colors.warning[500];
+      default:
+        return Colors.neutral[500];
+    }
+  };
+  
+  const getStatusText = (status: string) => {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+  
+  const chartConfig = {
+    backgroundGradientFrom: Colors.white,
+    backgroundGradientTo: Colors.white,
+    color: (opacity = 1) => `rgba(30, 64, 175, ${opacity})`,
+    strokeWidth: 2,
+    barPercentage: 0.5,
+    useShadowColorFromDataset: false,
+    decimalPlaces: 0,
+  };
+
+  const handleLeaveSubmit = (leave: Omit<LeaveApplication, 'id' | 'status' | 'appliedDate'>) => {
+    const newLeave: LeaveApplication = {
+      ...leave,
+      id: Date.now().toString(),
+      status: 'pending',
+      appliedDate: new Date().toISOString().split('T')[0]
+    };
+    
+    setAppliedLeaves([newLeave, ...appliedLeaves]);
+    Alert.alert('Success', 'Leave application submitted successfully!');
+  };
+
+  if (showLeaveForm) {
+    return (
+      <LeaveApplicationForm
+        onClose={() => setShowLeaveForm(false)}
+        onSubmit={handleLeaveSubmit}
+      />
+    );
+  }
+
+  if (showAppliedLeaves) {
+    return (
+      <AppliedLeavesList
+        leaves={appliedLeaves}
+        onClose={() => setShowAppliedLeaves(false)}
+      />
+    );
+  }
+
+  return (
+    <View style={styles.reportContent}>
+      <View style={styles.periodSelector}>
+        <Text style={styles.periodLabel}>Period:</Text>
+        <TouchableOpacity style={styles.periodButton}>
+          <Text style={styles.periodButtonText}>{selectedPeriod}</Text>
+          <ChevronDown size={16} color={Colors.neutral[700]} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.leaveActionsContainer}>
+        <TouchableOpacity
+          style={styles.leaveActionButton}
+          onPress={() => setShowLeaveForm(true)}
+        >
+          <Plus size={20} color={Colors.white} />
+          <Text style={styles.leaveActionButtonText}>Apply Leave</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.leaveActionButton, styles.viewLeavesButton]}
+          onPress={() => setShowAppliedLeaves(true)}
+        >
+          <Eye size={20} color={Colors.primary[600]} />
+          <Text style={[styles.leaveActionButtonText, styles.viewLeavesButtonText]}>View Applied</Text>
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.chartContainer}>
+        <Text style={styles.chartTitle}>Monthly Attendance Rate (%)</Text>
+        <LineChart
+          data={attendanceData}
+          width={screenWidth - (SPACING.md * 2)}
+          height={220}
+          chartConfig={chartConfig}
+          bezier
+          style={styles.chart}
+          fromZero
+          yAxisSuffix="%"
+        />
+      </View>
+      
+      <View style={styles.summaryContainer}>
+        <Text style={styles.sectionTitle}>Attendance Summary</Text>
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Present</Text>
+            <Text style={styles.summaryValue}>96%</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Absent</Text>
+            <Text style={styles.summaryValue}>2%</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Late</Text>
+            <Text style={styles.summaryValue}>2%</Text>
+          </View>
+        </View>
+      </View>
+      
+      <View style={styles.recordsContainer}>
+        <Text style={styles.sectionTitle}>Recent Attendance</Text>
+        
+        {attendanceRecords.map((record) => (
+          <View key={record.id} style={styles.recordItem}>
+            <View style={styles.recordLeft}>
+              <Text style={styles.recordDate}>{record.date}</Text>
+              {record.note !== '' && (
+                <Text style={styles.recordNote}>{record.note}</Text>
+              )}
+            </View>
+            
+            <View 
+              style={[
+                styles.statusBadge,
+                { backgroundColor: getStatusColor(record.status) }
+              ]}
+            >
+              <Text style={styles.statusText}>{getStatusText(record.status)}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+      
+      <TouchableOpacity style={styles.downloadButton}>
+        <FileText size={16} color={Colors.white} />
+        <Text style={styles.downloadButtonText}>Download Full Report</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -244,134 +667,6 @@ function AcademicReport({ screenWidth }: { screenWidth: number }) {
             <Text style={styles.summaryValue}>87.6%</Text>
           </View>
         </View>
-      </View>
-      
-      <TouchableOpacity style={styles.downloadButton}>
-        <FileText size={16} color={Colors.white} />
-        <Text style={styles.downloadButtonText}>Download Full Report</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function AttendanceReport({ screenWidth }: { screenWidth: number }) {
-  const [selectedPeriod, setSelectedPeriod] = useState('Current Term');
-  
-  // Attendance data for the chart
-  const attendanceData = {
-    labels: ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
-    datasets: [
-      {
-        data: [100, 95, 98, 92, 97, 100],
-        color: () => Colors.primary[600],
-        strokeWidth: 2,
-      },
-    ],
-  };
-  
-  // Detailed attendance records
-  const attendanceRecords = [
-    { id: '1', date: 'Jan 15, 2025', status: 'present', note: '' },
-    { id: '2', date: 'Jan 14, 2025', status: 'present', note: '' },
-    { id: '3', date: 'Jan 13, 2025', status: 'present', note: '' },
-    { id: '4', date: 'Jan 12, 2025', status: 'absent', note: 'Medical appointment' },
-    { id: '5', date: 'Jan 11, 2025', status: 'present', note: '' },
-    { id: '6', date: 'Jan 10, 2025', status: 'late', note: 'Bus delay - 15 min' },
-  ];
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'present':
-        return Colors.success[500];
-      case 'absent':
-        return Colors.error[500];
-      case 'late':
-        return Colors.warning[500];
-      default:
-        return Colors.neutral[500];
-    }
-  };
-  
-  const getStatusText = (status: string) => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
-  
-  const chartConfig = {
-    backgroundGradientFrom: Colors.white,
-    backgroundGradientTo: Colors.white,
-    color: (opacity = 1) => `rgba(30, 64, 175, ${opacity})`,
-    strokeWidth: 2,
-    barPercentage: 0.5,
-    useShadowColorFromDataset: false,
-    decimalPlaces: 0,
-  };
-
-  return (
-    <View style={styles.reportContent}>
-      <View style={styles.periodSelector}>
-        <Text style={styles.periodLabel}>Period:</Text>
-        <TouchableOpacity style={styles.periodButton}>
-          <Text style={styles.periodButtonText}>{selectedPeriod}</Text>
-          <ChevronDown size={16} color={Colors.neutral[700]} />
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Monthly Attendance Rate (%)</Text>
-        <LineChart
-          data={attendanceData}
-          width={screenWidth - (SPACING.md * 2)}
-          height={220}
-          chartConfig={chartConfig}
-          bezier
-          style={styles.chart}
-          fromZero
-          yAxisSuffix="%"
-        />
-      </View>
-      
-      <View style={styles.summaryContainer}>
-        <Text style={styles.sectionTitle}>Attendance Summary</Text>
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Present</Text>
-            <Text style={styles.summaryValue}>96%</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Absent</Text>
-            <Text style={styles.summaryValue}>2%</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Late</Text>
-            <Text style={styles.summaryValue}>2%</Text>
-          </View>
-        </View>
-      </View>
-      
-      <View style={styles.recordsContainer}>
-        <Text style={styles.sectionTitle}>Recent Attendance</Text>
-        
-        {attendanceRecords.map((record) => (
-          <View key={record.id} style={styles.recordItem}>
-            <View style={styles.recordLeft}>
-              <Text style={styles.recordDate}>{record.date}</Text>
-              {record.note !== '' && (
-                <Text style={styles.recordNote}>{record.note}</Text>
-              )}
-            </View>
-            
-            <View 
-              style={[
-                styles.statusBadge,
-                { backgroundColor: getStatusColor(record.status) }
-              ]}
-            >
-              <Text style={styles.statusText}>{getStatusText(record.status)}</Text>
-            </View>
-          </View>
-        ))}
       </View>
       
       <TouchableOpacity style={styles.downloadButton}>
@@ -593,6 +888,239 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     color: Colors.neutral[800],
     marginRight: SPACING.xs,
+  },
+  leaveActionsContainer: {
+    flexDirection: 'row',
+    marginBottom: SPACING.md,
+    gap: SPACING.sm,
+  },
+  leaveActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary[600],
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  viewLeavesButton: {
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.primary[600],
+  },
+  leaveActionButtonText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.sm,
+    color: Colors.white,
+    marginLeft: SPACING.xs,
+  },
+  viewLeavesButtonText: {
+    color: Colors.primary[600],
+  },
+  leaveFormContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md,
+    margin: SPACING.md,
+    ...globalStyles.shadow,
+  },
+  leaveFormHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+  },
+  leaveFormTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: FONT_SIZE.lg,
+    color: Colors.neutral[900],
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.neutral[100],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 20,
+    color: Colors.neutral[600],
+  },
+  formField: {
+    marginBottom: SPACING.md,
+  },
+  fieldLabel: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.sm,
+    color: Colors.neutral[700],
+    marginBottom: SPACING.xs,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: Colors.neutral[300],
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    backgroundColor: Colors.white,
+  },
+  dropdownText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: FONT_SIZE.md,
+    color: Colors.neutral[900],
+  },
+  placeholderText: {
+    color: Colors.neutral[400],
+  },
+  dropdownMenu: {
+    borderWidth: 1,
+    borderColor: Colors.neutral[300],
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: Colors.white,
+    marginTop: SPACING.xs,
+    ...globalStyles.shadow,
+  },
+  dropdownItem: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[100],
+  },
+  dropdownItemText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: FONT_SIZE.md,
+    color: Colors.neutral[900],
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: Colors.neutral[300],
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    fontFamily: 'Inter-Regular',
+    fontSize: FONT_SIZE.md,
+    color: Colors.neutral[900],
+    backgroundColor: Colors.white,
+  },
+  messageInput: {
+    borderWidth: 1,
+    borderColor: Colors.neutral[300],
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    fontFamily: 'Inter-Regular',
+    fontSize: FONT_SIZE.md,
+    color: Colors.neutral[900],
+    backgroundColor: Colors.white,
+    minHeight: 100,
+  },
+  characterCount: {
+    fontFamily: 'Inter-Regular',
+    fontSize: FONT_SIZE.xs,
+    color: Colors.neutral[500],
+    textAlign: 'right',
+    marginTop: SPACING.xs,
+  },
+  applyButton: {
+    backgroundColor: Colors.primary[600],
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.md,
+    alignItems: 'center',
+    marginTop: SPACING.md,
+  },
+  applyButtonDisabled: {
+    backgroundColor: Colors.neutral[400],
+  },
+  applyButtonText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.md,
+    color: Colors.white,
+  },
+  appliedLeavesContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md,
+    margin: SPACING.md,
+    ...globalStyles.shadow,
+    maxHeight: '80%',
+  },
+  appliedLeavesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+  },
+  appliedLeavesTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: FONT_SIZE.lg,
+    color: Colors.neutral[900],
+  },
+  leavesList: {
+    flex: 1,
+  },
+  noLeavesContainer: {
+    padding: SPACING.xl,
+    alignItems: 'center',
+  },
+  noLeavesText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: FONT_SIZE.md,
+    color: Colors.neutral[500],
+  },
+  leaveItem: {
+    backgroundColor: Colors.neutral[50],
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+  },
+  leaveItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  leaveItemType: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.md,
+    color: Colors.neutral[900],
+  },
+  leaveItemStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  leaveItemStatusText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.sm,
+    marginLeft: SPACING.xs,
+  },
+  leaveItemDates: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  leaveItemDatesText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: FONT_SIZE.sm,
+    color: Colors.neutral[600],
+    marginLeft: SPACING.xs,
+  },
+  leaveItemMessage: {
+    fontFamily: 'Inter-Regular',
+    fontSize: FONT_SIZE.sm,
+    color: Colors.neutral[700],
+    marginBottom: SPACING.sm,
+  },
+  leaveItemAppliedDate: {
+    fontFamily: 'Inter-Regular',
+    fontSize: FONT_SIZE.xs,
+    color: Colors.neutral[500],
   },
   chartContainer: {
     backgroundColor: Colors.white,

@@ -4,14 +4,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { SPACING, FONT_SIZE, BORDER_RADIUS, globalStyles } from '@/constants/Theme';
-import { ArrowLeft, MessageSquare, Star, Send, ThumbsUp, CircleAlert as AlertCircle, Lightbulb } from 'lucide-react-native';
+import { ArrowLeft, MessageSquare, Star, Send, ThumbsUp, CircleAlert as AlertCircle, Lightbulb, Paperclip, Image as ImageIcon, FileText, X } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+
+interface AttachedFile {
+  id: string;
+  name: string;
+  type: 'image' | 'pdf';
+  size: string;
+  uri?: string;
+}
 
 export default function FeedbackScreen() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('general');
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = [
@@ -41,12 +50,80 @@ export default function FeedbackScreen() {
             onPress: () => {
               setFeedback('');
               setRating(0);
+              setAttachedFiles([]);
               router.back();
             }
           }
         ]
       );
     }, 1500);
+  };
+
+  const handleImageUpload = () => {
+    // Simulate image picker
+    Alert.alert(
+      'Upload Image',
+      'Choose an option',
+      [
+        {
+          text: 'Camera',
+          onPress: () => {
+            // Simulate adding image from camera
+            const newFile: AttachedFile = {
+              id: Date.now().toString(),
+              name: `camera_image_${Date.now()}.jpg`,
+              type: 'image',
+              size: '2.3 MB',
+              uri: 'https://images.pexels.com/photos/1462630/pexels-photo-1462630.jpeg?auto=compress&cs=tinysrgb&w=600'
+            };
+            setAttachedFiles([...attachedFiles, newFile]);
+          }
+        },
+        {
+          text: 'Gallery',
+          onPress: () => {
+            // Simulate adding image from gallery
+            const newFile: AttachedFile = {
+              id: Date.now().toString(),
+              name: `gallery_image_${Date.now()}.jpg`,
+              type: 'image',
+              size: '1.8 MB',
+              uri: 'https://images.pexels.com/photos/3783525/pexels-photo-3783525.jpeg?auto=compress&cs=tinysrgb&w=600'
+            };
+            setAttachedFiles([...attachedFiles, newFile]);
+          }
+        },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
+  const handlePDFUpload = () => {
+    // Simulate PDF picker
+    Alert.alert(
+      'Upload PDF',
+      'Select a PDF document',
+      [
+        {
+          text: 'Choose File',
+          onPress: () => {
+            // Simulate adding PDF
+            const newFile: AttachedFile = {
+              id: Date.now().toString(),
+              name: `document_${Date.now()}.pdf`,
+              type: 'pdf',
+              size: '856 KB'
+            };
+            setAttachedFiles([...attachedFiles, newFile]);
+          }
+        },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
+  const removeFile = (fileId: string) => {
+    setAttachedFiles(attachedFiles.filter(file => file.id !== fileId));
   };
 
   const renderStars = () => {
@@ -65,6 +142,32 @@ export default function FeedbackScreen() {
             />
           </TouchableOpacity>
         ))}
+      </View>
+    );
+  };
+
+  const renderAttachedFile = (file: AttachedFile) => {
+    return (
+      <View key={file.id} style={styles.attachedFileItem}>
+        <View style={styles.fileIconContainer}>
+          {file.type === 'image' ? (
+            <ImageIcon size={20} color={Colors.primary[600]} />
+          ) : (
+            <FileText size={20} color={Colors.error[600]} />
+          )}
+        </View>
+        
+        <View style={styles.fileInfo}>
+          <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
+          <Text style={styles.fileSize}>{file.size}</Text>
+        </View>
+        
+        <TouchableOpacity
+          style={styles.removeFileButton}
+          onPress={() => removeFile(file.id)}
+        >
+          <X size={16} color={Colors.neutral[500]} />
+        </TouchableOpacity>
       </View>
     );
   };
@@ -161,6 +264,35 @@ export default function FeedbackScreen() {
               <Text style={styles.characterCount}>
                 {feedback.length}/500 characters
               </Text>
+            </View>
+
+            <View style={styles.attachmentSection}>
+              <Text style={styles.attachmentTitle}>Attachments (Optional)</Text>
+              
+              <View style={styles.uploadButtons}>
+                <TouchableOpacity
+                  style={styles.uploadButton}
+                  onPress={handleImageUpload}
+                >
+                  <ImageIcon size={20} color={Colors.primary[600]} />
+                  <Text style={styles.uploadButtonText}>Upload Image</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.uploadButton}
+                  onPress={handlePDFUpload}
+                >
+                  <FileText size={20} color={Colors.error[600]} />
+                  <Text style={styles.uploadButtonText}>Upload PDF</Text>
+                </TouchableOpacity>
+              </View>
+
+              {attachedFiles.length > 0 && (
+                <View style={styles.attachedFilesContainer}>
+                  <Text style={styles.attachedFilesTitle}>Attached Files:</Text>
+                  {attachedFiles.map(renderAttachedFile)}
+                </View>
+              )}
             </View>
           </Animated.View>
 
@@ -341,11 +473,95 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginTop: SPACING.xs,
+    marginBottom: SPACING.md,
   },
   characterCount: {
     fontFamily: 'Inter-Regular',
     fontSize: FONT_SIZE.xs,
     color: Colors.neutral[500],
+  },
+  attachmentSection: {
+    marginTop: SPACING.md,
+  },
+  attachmentTitle: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.md,
+    color: Colors.neutral[800],
+    marginBottom: SPACING.sm,
+  },
+  uploadButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.md,
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.neutral[50],
+    borderWidth: 1,
+    borderColor: Colors.neutral[300],
+    borderRadius: BORDER_RADIUS.md,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    flex: 1,
+    marginHorizontal: SPACING.xs,
+    justifyContent: 'center',
+  },
+  uploadButtonText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.sm,
+    color: Colors.neutral[700],
+    marginLeft: SPACING.xs,
+  },
+  attachedFilesContainer: {
+    marginTop: SPACING.sm,
+  },
+  attachedFilesTitle: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.sm,
+    color: Colors.neutral[700],
+    marginBottom: SPACING.sm,
+  },
+  attachedFileItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.neutral[50],
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.sm,
+    marginBottom: SPACING.xs,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+  },
+  fileIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
+  },
+  fileInfo: {
+    flex: 1,
+  },
+  fileName: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.sm,
+    color: Colors.neutral[900],
+    marginBottom: 2,
+  },
+  fileSize: {
+    fontFamily: 'Inter-Regular',
+    fontSize: FONT_SIZE.xs,
+    color: Colors.neutral[600],
+  },
+  removeFileButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.neutral[200],
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   submitSection: {
     alignItems: 'center',
