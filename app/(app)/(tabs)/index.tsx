@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform }
 import { useAuth } from '@/context/AuthContext';
 import Colors from '@/constants/Colors';
 import { SPACING, FONT_SIZE, BORDER_RADIUS, globalStyles } from '@/constants/Theme';
-import { Bell, CheckCircle2, BookOpen, Bus, FileText, Plus, Users, MessageSquare } from 'lucide-react-native';
+import { Bell, CircleCheck as CheckCircle2, BookOpen, Bus, FileText, Plus, Users, MessageSquare } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';

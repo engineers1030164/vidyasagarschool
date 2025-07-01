@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { SPACING, FONT_SIZE, BORDER_RADIUS, globalStyles } from '@/constants/Theme';
-import { Search, Plus, Send, ChevronLeft, MoreVertical, Paperclip, Image as ImageIcon, FileText, MessageSquare, Megaphone } from 'lucide-react-native';
+import { Search, Plus, Send, ChevronLeft, MoveVertical as MoreVertical, Paperclip, Image as ImageIcon, FileText, MessageSquare, Megaphone } from 'lucide-react-native';
 import Animated, { FadeIn, SlideInRight } from 'react-native-reanimated';
 
 interface MessageUser {

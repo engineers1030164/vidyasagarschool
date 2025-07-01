@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import Colors from '@/constants/Colors';
 import { SPACING, FONT_SIZE, BORDER_RADIUS, globalStyles } from '@/constants/Theme';
-import { ArrowLeft, Plus, Edit3, Trash2, Users, MessageSquare, BookOpen } from 'lucide-react-native';
+import { ArrowLeft, Plus, CreditCard as Edit3, Trash2, Users, MessageSquare, BookOpen } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 interface TeacherClass {
