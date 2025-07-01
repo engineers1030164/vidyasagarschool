@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { SPACING, FONT_SIZE, BORDER_RADIUS, globalStyles } from '@/constants/Theme';
-import { Search, Plus, Send, ChevronLeft, MoveVertical as MoreVertical, Paperclip, Image as ImageIcon, FileText } from 'lucide-react-native';
+import { Search, Plus, Send, ChevronLeft, MoreVertical, Paperclip, Image as ImageIcon, FileText, MessageSquare, Megaphone } from 'lucide-react-native';
 import Animated, { FadeIn, SlideInRight } from 'react-native-reanimated';
 
 interface MessageUser {
@@ -32,6 +33,7 @@ interface Message {
 
 export default function MessagesScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<MessageUser | null>(null);
   const [message, setMessage] = useState('');
@@ -185,6 +187,30 @@ export default function MessagesScreen() {
     // For this demo, we'll just clear the input
     setMessage('');
   };
+
+  const handleNewMessage = () => {
+    if (user?.role === 'teacher') {
+      router.push('/(app)/send-message');
+    } else if (user?.role === 'admin') {
+      router.push('/(app)/broadcast-message');
+    } else {
+      // Students can only reply to existing conversations
+      return;
+    }
+  };
+
+  const getNewMessageIcon = () => {
+    if (user?.role === 'admin') {
+      return <Megaphone size={24} color={Colors.primary[600]} />;
+    }
+    return <MessageSquare size={24} color={Colors.primary[600]} />;
+  };
+
+  const getNewMessageText = () => {
+    if (user?.role === 'teacher') return 'Send to Class';
+    if (user?.role === 'admin') return 'Broadcast';
+    return 'New Message';
+  };
   
   const renderItem = ({ item }: { item: MessageUser }) => (
     <TouchableOpacity 
@@ -317,30 +343,32 @@ export default function MessagesScreen() {
             inverted={false}
           />
           
-          <View style={styles.inputContainer}>
-            <TouchableOpacity style={styles.attachButton}>
-              <Paperclip size={24} color={Colors.neutral[600]} />
-            </TouchableOpacity>
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Type a message..."
-              value={message}
-              onChangeText={setMessage}
-              multiline
-            />
-            
-            <TouchableOpacity 
-              style={[
-                styles.sendButton,
-                !message.trim() && styles.sendButtonDisabled
-              ]}
-              onPress={handleSendMessage}
-              disabled={!message.trim()}
-            >
-              <Send size={20} color={message.trim() ? Colors.white : Colors.neutral[400]} />
-            </TouchableOpacity>
-          </View>
+          {user?.role === 'student' && (
+            <View style={styles.inputContainer}>
+              <TouchableOpacity style={styles.attachButton}>
+                <Paperclip size={24} color={Colors.neutral[600]} />
+              </TouchableOpacity>
+              
+              <TextInput
+                style={styles.input}
+                placeholder="Type a message..."
+                value={message}
+                onChangeText={setMessage}
+                multiline
+              />
+              
+              <TouchableOpacity 
+                style={[
+                  styles.sendButton,
+                  !message.trim() && styles.sendButtonDisabled
+                ]}
+                onPress={handleSendMessage}
+                disabled={!message.trim()}
+              >
+                <Send size={20} color={message.trim() ? Colors.white : Colors.neutral[400]} />
+              </TouchableOpacity>
+            </View>
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     );
@@ -365,10 +393,42 @@ export default function MessagesScreen() {
             />
           </View>
           
-          <TouchableOpacity style={styles.newMessageButton}>
-            <Plus size={24} color={Colors.primary[600]} />
-          </TouchableOpacity>
+          {(user?.role === 'teacher' || user?.role === 'admin') && (
+            <TouchableOpacity 
+              style={styles.newMessageButton}
+              onPress={handleNewMessage}
+            >
+              {getNewMessageIcon()}
+            </TouchableOpacity>
+          )}
         </View>
+
+        {(user?.role === 'teacher' || user?.role === 'admin') && (
+          <View style={styles.quickActionsContainer}>
+            <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+            <View style={styles.quickActions}>
+              {user?.role === 'teacher' && (
+                <TouchableOpacity 
+                  style={styles.quickActionButton}
+                  onPress={() => router.push('/(app)/send-message')}
+                >
+                  <MessageSquare size={20} color={Colors.primary[600]} />
+                  <Text style={styles.quickActionText}>Send to Class</Text>
+                </TouchableOpacity>
+              )}
+              
+              {user?.role === 'admin' && (
+                <TouchableOpacity 
+                  style={styles.quickActionButton}
+                  onPress={() => router.push('/(app)/broadcast-message')}
+                >
+                  <Megaphone size={20} color={Colors.error[600]} />
+                  <Text style={styles.quickActionText}>School Broadcast</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
         
         <FlatList
           data={filteredMessages}
@@ -436,6 +496,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: SPACING.sm,
+  },
+  quickActionsContainer: {
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.md,
+  },
+  quickActionsTitle: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.sm,
+    color: Colors.neutral[700],
+    marginBottom: SPACING.sm,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  quickActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.neutral[50],
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+  },
+  quickActionText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: FONT_SIZE.sm,
+    color: Colors.neutral[700],
+    marginLeft: SPACING.xs,
   },
   listContainer: {
     paddingHorizontal: SPACING.md,

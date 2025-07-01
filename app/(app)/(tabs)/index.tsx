@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform }
 import { useAuth } from '@/context/AuthContext';
 import Colors from '@/constants/Colors';
 import { SPACING, FONT_SIZE, BORDER_RADIUS, globalStyles } from '@/constants/Theme';
-import { Bell, Calendar, Clock, CircleCheck as CheckCircle2, BookOpen, Bus, FileText } from 'lucide-react-native';
+import { Bell, CheckCircle2, BookOpen, Bus, FileText, Plus, Users, MessageSquare } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 interface Notification {
@@ -25,6 +26,7 @@ interface Task {
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   
   // Mock data
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -103,6 +105,88 @@ export default function HomeScreen() {
     return notifications.filter(n => !n.read).length;
   };
 
+  // Quick actions based on user role
+  const getQuickActions = () => {
+    const commonActions = [
+      {
+        icon: CheckCircle2,
+        color: Colors.secondary[600],
+        bgColor: Colors.secondary[100],
+        text: 'Attendance',
+        onPress: () => router.push('/(app)/(tabs)/reports'),
+      },
+      {
+        icon: Bus,
+        color: Colors.success[600],
+        bgColor: Colors.success[100],
+        text: 'Bus Track',
+        onPress: () => router.push('/(app)/(tabs)/track'),
+      },
+    ];
+
+    if (user?.role === 'student') {
+      return [
+        {
+          icon: FileText,
+          color: Colors.accent[600],
+          bgColor: Colors.accent[100],
+          text: 'Reports',
+          onPress: () => router.push('/(app)/(tabs)/reports'),
+        },
+        ...commonActions,
+      ];
+    }
+
+    if (user?.role === 'teacher') {
+      return [
+        {
+          icon: Plus,
+          color: Colors.primary[600],
+          bgColor: Colors.primary[100],
+          text: 'Add Class',
+          onPress: () => router.push('/(app)/manage-classes'),
+        },
+        {
+          icon: Users,
+          color: Colors.accent[600],
+          bgColor: Colors.accent[100],
+          text: 'My Classes',
+          onPress: () => router.push('/(app)/my-classes'),
+        },
+        {
+          icon: MessageSquare,
+          color: Colors.warning[600],
+          bgColor: Colors.warning[100],
+          text: 'Send Message',
+          onPress: () => router.push('/(app)/send-message'),
+        },
+        ...commonActions,
+      ];
+    }
+
+    if (user?.role === 'admin') {
+      return [
+        {
+          icon: MessageSquare,
+          color: Colors.error[600],
+          bgColor: Colors.error[100],
+          text: 'Broadcast',
+          onPress: () => router.push('/(app)/broadcast-message'),
+        },
+        {
+          icon: Users,
+          color: Colors.accent[600],
+          bgColor: Colors.accent[100],
+          text: 'Manage Users',
+          onPress: () => router.push('/(app)/manage-users'),
+        },
+        ...commonActions,
+      ];
+    }
+
+    return commonActions;
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
@@ -139,84 +223,70 @@ export default function HomeScreen() {
           <Animated.View entering={FadeInDown.duration(500).delay(100)}>
             <Text style={styles.sectionTitle}>Quick Actions</Text>
             <View style={styles.quickActionsContainer}>
-              <TouchableOpacity style={styles.quickActionItem}>
-                <View style={[styles.quickActionIcon, { backgroundColor: Colors.primary[100] }]}>
-                  <Calendar color={Colors.primary[600]} size={24} />
-                </View>
-                <Text style={styles.quickActionText}>Schedule</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.quickActionItem}>
-                <View style={[styles.quickActionIcon, { backgroundColor: Colors.secondary[100] }]}>
-                  <CheckCircle2 color={Colors.secondary[600]} size={24} />
-                </View>
-                <Text style={styles.quickActionText}>Attendance</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.quickActionItem}>
-                <View style={[styles.quickActionIcon, { backgroundColor: Colors.accent[100] }]}>
-                  <BookOpen color={Colors.accent[600]} size={24} />
-                </View>
-                <Text style={styles.quickActionText}>Homework</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.quickActionItem}>
-                <View style={[styles.quickActionIcon, { backgroundColor: Colors.success[100] }]}>
-                  <Bus color={Colors.success[600]} size={24} />
-                </View>
-                <Text style={styles.quickActionText}>Bus Track</Text>
-              </TouchableOpacity>
+              {getQuickActions().map((action, index) => (
+                <TouchableOpacity 
+                  key={index}
+                  style={styles.quickActionItem}
+                  onPress={action.onPress}
+                >
+                  <View style={[styles.quickActionIcon, { backgroundColor: action.bgColor }]}>
+                    <action.icon color={action.color} size={24} />
+                  </View>
+                  <Text style={styles.quickActionText}>{action.text}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </Animated.View>
           
-          <Animated.View entering={FadeInDown.duration(500).delay(200)}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>See All</Text>
-              </TouchableOpacity>
-            </View>
-            
-            {tasks.map((task, index) => (
-              <TouchableOpacity 
-                key={task.id}
-                style={[
-                  styles.taskItem,
-                  task.completed && styles.taskCompleted,
-                ]}
-                onPress={() => toggleTaskCompletion(task.id)}
-              >
-                <View style={styles.taskLeftSection}>
-                  <View style={[
-                    styles.checkboxContainer,
-                    task.completed && styles.checkboxCompleted
-                  ]}>
-                    {task.completed && (
-                      <CheckCircle2 
-                        color={Colors.white} 
-                        size={16}
-                      />
-                    )}
+          {user?.role === 'student' && (
+            <Animated.View entering={FadeInDown.duration(500).delay(200)}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
+                <TouchableOpacity>
+                  <Text style={styles.seeAllText}>See All</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {tasks.map((task, index) => (
+                <TouchableOpacity 
+                  key={task.id}
+                  style={[
+                    styles.taskItem,
+                    task.completed && styles.taskCompleted,
+                  ]}
+                  onPress={() => toggleTaskCompletion(task.id)}
+                >
+                  <View style={styles.taskLeftSection}>
+                    <View style={[
+                      styles.checkboxContainer,
+                      task.completed && styles.checkboxCompleted
+                    ]}>
+                      {task.completed && (
+                        <CheckCircle2 
+                          color={Colors.white} 
+                          size={16}
+                        />
+                      )}
+                    </View>
+                    
+                    <View style={styles.taskDetails}>
+                      <Text style={[
+                        styles.taskTitle,
+                        task.completed && styles.taskTitleCompleted
+                      ]}>
+                        {task.title}
+                      </Text>
+                      <Text style={styles.taskSubject}>{task.subject}</Text>
+                    </View>
                   </View>
                   
-                  <View style={styles.taskDetails}>
-                    <Text style={[
-                      styles.taskTitle,
-                      task.completed && styles.taskTitleCompleted
-                    ]}>
-                      {task.title}
-                    </Text>
-                    <Text style={styles.taskSubject}>{task.subject}</Text>
+                  <View style={styles.taskDueDate}>
+                    <Text style={styles.taskDueDateText}>{task.dueDate}</Text>
                   </View>
-                </View>
-                
-                <View style={styles.taskDueDate}>
-                  <Clock size={14} color={Colors.neutral[500]} />
-                  <Text style={styles.taskDueDateText}>{task.dueDate}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </Animated.View>
+                </TouchableOpacity>
+              ))}
+            </Animated.View>
+          )}
           
           <Animated.View entering={FadeInDown.duration(500).delay(300)}>
             <View style={styles.sectionHeader}>
@@ -248,26 +318,28 @@ export default function HomeScreen() {
             ))}
           </Animated.View>
           
-          <Animated.View entering={FadeInDown.duration(500).delay(400)} style={styles.statsContainer}>
-            <Text style={styles.sectionTitle}>This Month</Text>
-            <View style={styles.statsRow}>
-              <View style={[styles.statCard, { backgroundColor: Colors.primary[50] }]}>
-                <View style={[styles.statIconContainer, { backgroundColor: Colors.primary[100] }]}>
-                  <CheckCircle2 color={Colors.primary[600]} size={20} />
+          {user?.role === 'student' && (
+            <Animated.View entering={FadeInDown.duration(500).delay(400)} style={styles.statsContainer}>
+              <Text style={styles.sectionTitle}>This Month</Text>
+              <View style={styles.statsRow}>
+                <View style={[styles.statCard, { backgroundColor: Colors.primary[50] }]}>
+                  <View style={[styles.statIconContainer, { backgroundColor: Colors.primary[100] }]}>
+                    <CheckCircle2 color={Colors.primary[600]} size={20} />
+                  </View>
+                  <Text style={styles.statValue}>92%</Text>
+                  <Text style={styles.statLabel}>Attendance</Text>
                 </View>
-                <Text style={styles.statValue}>92%</Text>
-                <Text style={styles.statLabel}>Attendance</Text>
-              </View>
-              
-              <View style={[styles.statCard, { backgroundColor: Colors.secondary[50] }]}>
-                <View style={[styles.statIconContainer, { backgroundColor: Colors.secondary[100] }]}>
-                  <FileText color={Colors.secondary[600]} size={20} />
+                
+                <View style={[styles.statCard, { backgroundColor: Colors.secondary[50] }]}>
+                  <View style={[styles.statIconContainer, { backgroundColor: Colors.secondary[100] }]}>
+                    <FileText color={Colors.secondary[600]} size={20} />
+                  </View>
+                  <Text style={styles.statValue}>8/10</Text>
+                  <Text style={styles.statLabel}>Assignments</Text>
                 </View>
-                <Text style={styles.statValue}>8/10</Text>
-                <Text style={styles.statLabel}>Assignments</Text>
               </View>
-            </View>
-          </Animated.View>
+            </Animated.View>
+          )}
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -355,12 +427,14 @@ const styles = StyleSheet.create({
   },
   quickActionsContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: SPACING.md,
   },
   quickActionItem: {
     alignItems: 'center',
-    width: '22%',
+    width: '30%',
+    marginBottom: SPACING.md,
   },
   quickActionIcon: {
     width: 50,
@@ -439,8 +513,6 @@ const styles = StyleSheet.create({
     color: Colors.neutral[600],
   },
   taskDueDate: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: Colors.neutral[100],
     paddingVertical: 4,
     paddingHorizontal: 8,
@@ -450,7 +522,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontSize: FONT_SIZE.xs,
     color: Colors.neutral[700],
-    marginLeft: 4,
   },
   notificationItem: {
     flexDirection: 'row',
